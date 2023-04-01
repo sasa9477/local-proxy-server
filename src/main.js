@@ -82,7 +82,6 @@ app.disableHardwareAcceleration()
 
 app.whenReady().then(() => {
   const store = initStore()
-  store.clear()
   handleIpcMain(store)
   createWindow(store)
 
