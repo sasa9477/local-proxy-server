@@ -1,10 +1,22 @@
-window.addEventListener("DOMContentLoaded", () => {
-  const replaceText = (selector, text) => {
-    const element = document.getElementById(selector);
-    if (element) element.innerText = text;
-  };
+/// @ts-check
+const { contextBridge, ipcRenderer } = require('electron')
 
-  for (const dependency of ["chrome", "node", "electron"]) {
-    replaceText(`${dependency}-version`, process.versions[dependency]);
+contextBridge.exposeInMainWorld('electronAPI', {
+  openFile: (/** @type {any} */ name) => ipcRenderer.invoke('dialog:openFile', name),
+})
+
+window.addEventListener('DOMContentLoaded', () => {
+  /**
+   *
+   * @param {string} selector
+   * @param {string | undefined} text
+   */
+  const replaceText = (selector, text) => {
+    const element = document.getElementById(selector)
+    if (element) element.innerText = text ?? ''
   }
-});
+
+  for (const dependency of ['chrome', 'node', 'electron']) {
+    replaceText(`${dependency}-version`, process.versions[dependency])
+  }
+})
