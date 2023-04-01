@@ -65,16 +65,18 @@ if (
   }
 
   startButton.addEventListener('click', async () => {
+    const port = Number(listenPortInput.value.trim())
+    if (Number.isNaN(port) || port < 0 || 65535 < port) {
+      setServerStatus(false, 'ポートが無効な値です', true)
+    }
     if (!targetUrlInput.value) {
       setServerStatus(false, 'ターゲットURLを指定してください', true)
       return
     }
     try {
       const targetUrl = new URL(targetUrlInput.value.trim())
-      console.log(targetUrl)
-      let port = Number(listenPortInput.value.trim())
-      port = !Number.isNaN(port) ? port : 8888
       await window.electronAPI.startProxyServer(`${targetUrl}`, port)
+
       setServerStatus(true, `Server Start. Listening on port ${port}...\nTarget URL: ${targetUrl}`)
     } catch (e) {
       if (e instanceof Error) {
