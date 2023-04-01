@@ -7,6 +7,7 @@ const Store = require('electron-store')
 const { startProxyServer, stopProxyServer } = require('./proxyServerController')
 
 Store.initRenderer()
+Menu.setApplicationMenu(null)
 
 const MAX_TARGET_URL_LENGTH = 10
 
@@ -59,9 +60,17 @@ const createWindow = (/** @type {Store<Setting>} */ store) => {
     width: 420,
     height: 260,
     backgroundColor: '#222222',
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
+  })
+
+  win.loadFile('./public/index.html')
+
+  // see https://www.electronjs.org/docs/latest/api/browser-window/#using-the-ready-to-show-event
+  win.once('ready-to-show', () => {
+    win.show()
   })
 
   win.webContents.on('did-finish-load', function () {
@@ -72,8 +81,6 @@ const createWindow = (/** @type {Store<Setting>} */ store) => {
     win.webContents.send('LOAD_SETTING', newValue)
   })
 
-  Menu.setApplicationMenu(null)
-  win.loadFile('./public/index.html')
   // win.webContents.openDevTools()
 }
 
