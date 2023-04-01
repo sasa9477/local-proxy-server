@@ -13,34 +13,23 @@
         <div class="input-area">
           <label for="target-url">Target URL :</label>
           <div class="target-url-container">
-            <input
-              type="text"
-              id="target-url"
-              name="target-url"
-              placeholder="Enter server URL..."
-              value="https://localhost:3000/"
-            />
+            <input type="text" id="target-url" name="target-url" placeholder="Enter server URL..." />
             <button type="button" class="toggle-target-list-button" id="toggle-target-list-button">▼</button>
             <div class="target-list-container" id="target-list-container">
-              <ul class="target-list">
-                <li class="target-list-item">https://localhost:3001/</li>
-                <li class="target-list-item">https://localhost:3002/</li>
-                <li class="target-list-item">https://localhost:3003/</li>
-                <li class="target-list-item">https://localhost:3004/</li>
-                <li class="target-list-item">https://localhost:3005/</li>
-                <li class="target-list-item">https://localhost:3006/</li>
+              <ul class="target-list" id="target-list">
+                <!-- insert by js -->
               </ul>
             </div>
           </div>
           <label for="listen-port">Listen Port :</label>
-          <input type="number" id="listen-port" name="listen-port" placeholder="Enter server port..." value="8888" />
+          <input type="number" id="listen-port" name="listen-port" placeholder="Enter server port..." />
         </div>
         <div class="button-area">
           <button type="button" id="start-button">サーバーを起動</button>
           <button type="button" id="stop-button" disabled>サーバーを停止</button>
         </div>
       </form>
-      <p class="server-status" id="server-status">Server Stopping</p>
+      <p class="server-status" id="server-status">Server Stopped</p>
     </main>
     <script src="./js/renderer.js"></script>
   </body>

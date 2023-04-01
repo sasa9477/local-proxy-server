@@ -1,5 +1,5 @@
 /// @ts-check
-/// <reference path="./global.d.ts"/>
+/// <reference path="../../src/global.d.ts"/>
 
 const targetUrlInput = document.getElementById('target-url')
 const listenPortInput = document.getElementById('listen-port')
@@ -8,7 +8,7 @@ const startButton = document.getElementById('start-button')
 const stopButton = document.getElementById('stop-button')
 const toggleShowTargetListButton = document.getElementById('toggle-target-list-button')
 const targetListContainer = document.getElementById('target-list-container')
-const targetListItems = document.querySelectorAll('.target-list-item')
+const targetList = document.getElementById('target-list')
 
 if (
   targetUrlInput instanceof HTMLInputElement &&
@@ -18,69 +18,83 @@ if (
   stopButton instanceof HTMLButtonElement &&
   toggleShowTargetListButton instanceof HTMLButtonElement &&
   targetListContainer &&
-  targetListItems
+  targetList
 ) {
-  /**
-   * Set server status
-   * @param {boolean} active
-   * @param {string} statusText
-   * @param {boolean} error
-   */
-  const setServerStatus = (active, statusText = '', error = false) => {
+  window.electronAPI.onLoadSetting((setting) => {
+    listenPortInput.value = '' + setting.listenPort
+
+    while (targetList.firstChild) {
+      targetList.removeChild(targetList.firstChild)
+    }
+
+    const firstItem = setting.targetUrls.splice(0, 1)
+    targetUrlInput.value = firstItem[0]
+
+    for (const targetURL of setting.targetUrls) {
+      // create new list item
+      const item = document.createElement('li')
+      item.innerHTML = targetURL
+      item.addEventListener('click', () => {
+        targetUrlInput.value = item.innerHTML
+        targetListContainer.style.display = 'none'
+      })
+      targetList.appendChild(item)
+    }
+  })
+
+  const setServerStatus = (/** @type {boolean} */ serverActive, statusText = '', error = false) => {
     if (error) {
       serverStatusElement.innerText = statusText || 'An error occurred.'
       serverStatusElement.classList.add('error')
+      return
     }
 
     serverStatusElement.classList.remove('error')
-    if (active) {
+    if (serverActive) {
       serverStatusElement.innerText = statusText || 'Server Start'
     } else {
-      serverStatusElement.innerText = statusText || 'Server Stopping'
+      serverStatusElement.innerText = statusText || 'Server Stopped'
     }
 
     if (startButton instanceof HTMLButtonElement) {
-      startButton.disabled = active
+      startButton.disabled = serverActive
     }
     if (stopButton instanceof HTMLButtonElement) {
-      stopButton.disabled = !active
+      stopButton.disabled = !serverActive
     }
   }
 
-  startButton?.addEventListener('click', async () => {
+  startButton.addEventListener('click', async () => {
     if (!targetUrlInput.value) {
-      setServerStatus(false, 'ターゲットURLを指定してください', false)
+      setServerStatus(false, 'ターゲットURLを指定してください', true)
       return
     }
     try {
-      const targetUrl = targetUrlInput.value.trim()
+      const targetUrl = new URL(targetUrlInput.value.trim())
+      console.log(targetUrl)
       let port = Number(listenPortInput.value.trim())
       port = !Number.isNaN(port) ? port : 8888
-      const launchResult = await window.electronAPI.startProxyServer(targetUrl, port)
-      setServerStatus(true, `Server Start. Listen on port ${port}...\nTarget URL: ${targetUrl}`)
+      await window.electronAPI.startProxyServer(`${targetUrl}`, port)
+      setServerStatus(true, `Server Start. Listening on port ${port}...\nTarget URL: ${targetUrl}`)
     } catch (e) {
       if (e instanceof Error) {
-        setServerStatus(false, e.message, false)
+        setServerStatus(false, e.message, true)
       }
     }
   })
 
-  stopButton?.addEventListener('click', async () => {
+  stopButton.addEventListener('click', async () => {
     await window.electronAPI.stopProxyServer()
     setServerStatus(false)
   })
 
-  toggleShowTargetListButton?.addEventListener('click', () => {
-    console.log(targetListContainer.style.display)
+  toggleShowTargetListButton.addEventListener('click', () => {
     targetListContainer.style.display = targetListContainer.style.display === 'block' ? 'none' : 'block'
   })
 
-  targetListItems.forEach((item) => {
-    console.log('foreach')
-    item.addEventListener('click', () => {
-      console.log(item.nodeValue)
-      targetUrlInput.value = item.innerHTML
+  targetUrlInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
       targetListContainer.style.display = 'none'
-    })
+    }
   })
 }

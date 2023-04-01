@@ -123,14 +123,14 @@ button:hover:not(:disabled) {
   left: 0;
   z-index: 1;
   width: 100%;
-  max-height: calc(var(--list-item-height) * 5);
+  height: calc(var(--list-item-height) * 5);
   overflow-y: scroll;
   border-radius: 4px;
   background-color: #444;
   box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
 }
 
-.target-list-item {
+.target-list li {
   height: var(--list-item-height);
   padding: 4px;
   font-size: 1rem;
@@ -139,7 +139,7 @@ button:hover:not(:disabled) {
   transition: background-color 0.2s ease-out;
 }
 
-.target-list-item:hover:not(:disabled) {
+.target-list li:hover:not(:disabled) {
   background-color: #333;
 }
 

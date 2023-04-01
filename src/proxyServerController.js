@@ -8,10 +8,10 @@ let server = null
  * launch proxy server
  * @param {string} targetUrl
  * @param {number} port
- * @returns {Promise<string>}
+ * @returns {Promise<void>}
  */
 const startProxyServer = async (targetUrl, port) => {
-  console.log('start proxy server')
+  console.log('Start proxy server')
   server = httpProxy
     .createProxyServer({
       target: targetUrl,
@@ -24,15 +24,14 @@ const startProxyServer = async (targetUrl, port) => {
       ws: true,
     })
     .listen(port)
-  console.log(`target url ${targetUrl}`)
-  console.log(`listen on port ${port}...`)
+  console.log(`Target url ${targetUrl}. Listening on port ${port}...`)
 }
 
 const stopProxyServer = async () => {
   if (server != null) {
     server.close(() => {
       server = null
-      console.log('stop proxy server')
+      console.log('Stopped proxy server')
     })
   }
 }
