@@ -2,12 +2,13 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  openFile: (/** @type {any} */ name) => ipcRenderer.invoke('dialog:openFile', name),
+  startProxyServer: (targetURL, port) => ipcRenderer.invoke('START_PROXY_SERVER', targetURL, port),
+  stopProxyServer: () => ipcRenderer.invoke('STOP_PROXY_SERVER'),
 })
 
 window.addEventListener('DOMContentLoaded', () => {
   /**
-   *
+   * replace text
    * @param {string} selector
    * @param {string | undefined} text
    */
