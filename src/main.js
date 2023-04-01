@@ -74,7 +74,7 @@ const createWindow = (/** @type {Store<Setting>} */ store) => {
 
   Menu.setApplicationMenu(null)
   win.loadFile('./public/index.html')
-  win.webContents.openDevTools()
+  // win.webContents.openDevTools()
 }
 
 // see https://www.electronjs.org/ja/docs/latest/tutorial/offscreen-rendering.
