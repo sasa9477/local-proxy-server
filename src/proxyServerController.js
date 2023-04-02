@@ -1,3 +1,4 @@
+const path = require('path')
 const fs = require('fs')
 const httpProxy = require('http-proxy')
 
@@ -16,8 +17,8 @@ const startProxyServer = async (targetUrl, port) => {
     .createProxyServer({
       target: targetUrl,
       ssl: {
-        key: fs.readFileSync('localhost-key.pem'),
-        cert: fs.readFileSync('localhost.pem'),
+        key: fs.readFileSync(path.resolve(__dirname, '../localhost-key.pem')),
+        cert: fs.readFileSync(path.resolve(__dirname, '../localhost.pem')),
       },
       // see https://github.com/http-party/node-http-proxy/issues/1083.
       secure: false,
