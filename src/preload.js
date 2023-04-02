@@ -7,8 +7,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onLoadSetting: (/** @type {(setting: Setting) => void} */ callback) =>
     ipcRenderer.on('LOAD_SETTING', (_event, store) => callback(store)),
   saveSetting: (/** @type {Setting} */ setting) => ipcRenderer.invoke('SAVE_SETTING', setting),
-  startProxyServer: (/** @type {string} */ targetURL, /** @type {number} */ port) =>
-    ipcRenderer.invoke('START_PROXY_SERVER', targetURL, port),
+  startProxyServer: (/** @type {StartProxyServerOption} */ args) => ipcRenderer.invoke('START_PROXY_SERVER', args),
   stopProxyServer: () => ipcRenderer.invoke('STOP_PROXY_SERVER'),
 })
 

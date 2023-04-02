@@ -23,6 +23,18 @@
           </div>
           <label for="listen-port">Listen Port :</label>
           <input type="number" id="listen-port" name="listen-port" placeholder="Enter server port..." />
+          <div class="input-checkbox-area">
+            <label for="https">HTTPS :</label>
+            <input type="checkbox" id="https" name="https" />
+          </div>
+          <p>
+            プロキシサーバーの httpsを有効にする場合は true<br />(自己証明書を使用するためエラーになる可能性があります)
+          </p>
+          <div class="input-checkbox-area">
+            <label for="ws">WS :</label>
+            <input type="checkbox" id="ws" name="ws" />
+          </div>
+          <p>プロキシサーバーで WebSocketを使用する場合は true</p>
         </div>
         <div class="button-area">
           <button type="button" id="start-button">サーバーを起動</button>

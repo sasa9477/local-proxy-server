@@ -7,29 +7,36 @@ let server = null
 
 /**
  * launch proxy server
- * @param {string} targetUrl
- * @param {number} port
+ * @param {StartProxyServerOption} args
  * @returns {Promise<void>}
  */
-const startProxyServer = async (targetUrl, port) => {
+const startProxyServer = async (args) => {
+  const { targetUrl, listenPort, enableHttps, enableWs } = args
+
   console.log('Start proxy server')
-  server = httpProxy.createProxyServer({
-    target: targetUrl,
-    // ssl: {
-    //   key: fs.readFileSync(path.resolve(__dirname, '../localhost-key.pem')),
-    //   cert: fs.readFileSync(path.resolve(__dirname, '../localhost.pem')),
-    // },
-    // see https://github.com/http-party/node-http-proxy/issues/1083.
-    secure: false,
-    // ws: true,
-    changeOrigin: true,
-    autoRewrite: true,
-  })
-  on('error', (err, req, res) => {
-    console.log('Proxy server error: \n', err)
-    res.status(500).json({ message: err.message })
-  }).listen(port)
-  console.log(`Target url ${targetUrl}. Listening on port ${port}...`)
+  server = httpProxy
+    .createProxyServer({
+      target: targetUrl,
+      ssl: enableHttps
+        ? {
+            key: fs.readFileSync(path.resolve(__dirname, '../localhost-key.pem')),
+            cert: fs.readFileSync(path.resolve(__dirname, '../localhost.pem')),
+          }
+        : false,
+      // see https://github.com/http-party/node-http-proxy/issues/1083.
+      secure: false,
+      ws: enableWs,
+      changeOrigin: true,
+      autoRewrite: true,
+    })
+    .on('error', (err, req, res) => {
+      console.log('Proxy server error: \n', err)
+      res.status(500).json({ message: err.message })
+    })
+    .listen(listenPort)
+
+  console.log(`Https ${enableHttps}, Ws ${enableWs}`)
+  console.log(`Target url ${targetUrl}. Listening on port ${listenPort}...`)
 }
 
 const stopProxyServer = async () => {

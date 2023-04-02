@@ -22,16 +22,25 @@ const initStore = () => {
       type: 'number',
       default: 8888,
     },
+    enableHttps: {
+      type: 'boolean',
+      default: false,
+    },
+    enableWs: {
+      type: 'boolean',
+      default: false,
+    },
   }
   return new Store({ schema })
 }
 
-const updateStore = (
-  /** @type {Store<Setting>} */ store,
-  /** @type {string} */ targetUrl,
-  /** @type {number} */ listenPort
-) => {
+const updateStore = (/** @type {Store<Setting>} */ store, /** @type {StartProxyServerOption} */ args) => {
+  const { targetUrl, listenPort, enableHttps, enableWs } = args
+
   store.set('listenPort', listenPort)
+  store.set('enableHttps', enableHttps)
+  store.set('enableWs', enableWs)
+
   let targetUrls = store.get('targetUrls')
   const index = targetUrls.indexOf(targetUrl)
   // 前回の値が先頭になるようにする
@@ -46,9 +55,9 @@ const handleIpcMain = (/** @type {Store<Setting>} */ store) => {
   ipcMain.handle('SAVE_SETTING', (_event, setting) => {
     store.store = setting
   })
-  ipcMain.handle('START_PROXY_SERVER', async (_event, targetUrl, port) => {
-    updateStore(store, targetUrl, port)
-    return await startProxyServer(targetUrl, port)
+  ipcMain.handle('START_PROXY_SERVER', async (_event, args) => {
+    updateStore(store, args)
+    return await startProxyServer(args)
   })
   ipcMain.handle('STOP_PROXY_SERVER', async (_event) => {
     return await stopProxyServer()
@@ -57,8 +66,8 @@ const handleIpcMain = (/** @type {Store<Setting>} */ store) => {
 
 const createWindow = (/** @type {Store<Setting>} */ store) => {
   const win = new BrowserWindow({
-    width: 420,
-    height: 260,
+    width: 580,
+    height: 400,
     backgroundColor: '#222222',
     show: false,
     webPreferences: {
@@ -81,7 +90,7 @@ const createWindow = (/** @type {Store<Setting>} */ store) => {
     win.webContents.send('LOAD_SETTING', newValue)
   })
 
-  // win.webContents.openDevTools()
+  win.webContents.openDevTools()
 }
 
 // see https://www.electronjs.org/ja/docs/latest/tutorial/offscreen-rendering.
