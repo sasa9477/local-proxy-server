@@ -27,8 +27,7 @@ if (
       targetList.removeChild(targetList.firstChild)
     }
 
-    const firstItem = setting.targetUrls.splice(0, 1)
-    targetUrlInput.value = firstItem[0]
+    targetUrlInput.value = setting.targetUrls[0]
 
     for (const targetURL of setting.targetUrls) {
       // create new list item
