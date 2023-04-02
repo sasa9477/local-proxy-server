@@ -90,7 +90,7 @@ const createWindow = (/** @type {Store<Setting>} */ store) => {
     win.webContents.send('LOAD_SETTING', newValue)
   })
 
-  win.webContents.openDevTools()
+  // win.webContents.openDevTools()
 }
 
 // see https://www.electronjs.org/ja/docs/latest/tutorial/offscreen-rendering.
