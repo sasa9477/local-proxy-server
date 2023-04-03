@@ -6,6 +6,22 @@ const { app, BrowserWindow, ipcMain, Menu, Tray, nativeTheme } = require('electr
 const Store = require('electron-store')
 const { startProxyServer, stopProxyServer } = require('./proxyServerController')
 
+// const { networkInterfaces } = require('os')
+// const nets = networkInterfaces()
+// const results = []
+
+// for (const name of Object.keys(nets)) {
+//   const net = nets[name]?.filter((net) => net.family === 'IPv4' && !net.internal)
+//   if (net?.length) results.push({ name: name, address: net[0].address })
+// }
+// console.log(results)
+
+// var QRCode = require('qrcode')
+
+// QRCode.toDataURL('http://192.168.0.19:8888', function (err, url) {
+//   console.log(url)
+// })
+
 /**
  * アプリの多重起動防止
  */
