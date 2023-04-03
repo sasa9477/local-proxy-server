@@ -2,39 +2,49 @@
 /// <reference path="./global.d.ts"/>
 
 const path = require('path')
-const { app, BrowserWindow, ipcMain, Menu } = require('electron')
+const { app, BrowserWindow, ipcMain, Menu, Tray, nativeTheme } = require('electron')
 const Store = require('electron-store')
 const { startProxyServer, stopProxyServer } = require('./proxyServerController')
 
-Store.initRenderer()
-Menu.setApplicationMenu(null)
+/**
+ * アプリの多重起動防止
+ */
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+}
 
 const MAX_TARGET_URL_LENGTH = 10
 
-const initStore = () => {
-  /** @type {Store.Schema<Setting>} */
-  const schema = {
-    targetUrls: {
-      type: 'array',
-      default: ['https://localhost:3000/', 'http://localhost:3000/'],
-    },
-    listenPort: {
-      type: 'number',
-      default: 8888,
-    },
-    enableHttps: {
-      type: 'boolean',
-      default: false,
-    },
-    enableWs: {
-      type: 'boolean',
-      default: false,
-    },
-  }
-  return new Store({ schema })
+/** @type {BrowserWindow | null} */
+let mainWindow = null
+
+/** @type {Tray | null} */
+let tray = null
+
+/** @type {Store.Schema<Setting>} */
+const schema = {
+  targetUrls: {
+    type: 'array',
+    default: ['https://localhost:3000/', 'http://localhost:3000/'],
+  },
+  listenPort: {
+    type: 'number',
+    default: 8888,
+  },
+  enableHttps: {
+    type: 'boolean',
+    default: false,
+  },
+  enableWs: {
+    type: 'boolean',
+    default: false,
+  },
 }
 
-const updateStore = (/** @type {Store<Setting>} */ store, /** @type {StartProxyServerOption} */ args) => {
+Store.initRenderer()
+const store = new Store({ schema })
+
+const updateStore = (/** @type {StartProxyServerOption} */ args) => {
   const { targetUrl, listenPort, enableHttps, enableWs } = args
 
   store.set('listenPort', listenPort)
@@ -51,12 +61,12 @@ const updateStore = (/** @type {Store<Setting>} */ store, /** @type {StartProxyS
   store.set('targetUrls', targetUrls.slice(0, MAX_TARGET_URL_LENGTH))
 }
 
-const handleIpcMain = (/** @type {Store<Setting>} */ store) => {
+const handleIpcMain = () => {
   ipcMain.handle('SAVE_SETTING', (_event, setting) => {
     store.store = setting
   })
   ipcMain.handle('START_PROXY_SERVER', async (_event, args) => {
-    updateStore(store, args)
+    updateStore(args)
     return await startProxyServer(args)
   })
   ipcMain.handle('STOP_PROXY_SERVER', async (_event) => {
@@ -64,8 +74,8 @@ const handleIpcMain = (/** @type {Store<Setting>} */ store) => {
   })
 }
 
-const createWindow = (/** @type {Store<Setting>} */ store) => {
-  const win = new BrowserWindow({
+const createWindow = () => {
+  mainWindow = new BrowserWindow({
     width: 580,
     height: 400,
     backgroundColor: '#222222',
@@ -75,37 +85,82 @@ const createWindow = (/** @type {Store<Setting>} */ store) => {
     },
   })
 
-  win.loadFile('./public/index.html')
+  mainWindow.loadFile('./public/index.html')
 
   // see https://www.electronjs.org/docs/latest/api/browser-window/#using-the-ready-to-show-event
-  win.once('ready-to-show', () => {
-    win.show()
+  mainWindow.once('ready-to-show', () => {
+    mainWindow?.show()
   })
 
-  win.webContents.on('did-finish-load', function () {
-    win.webContents.send('LOAD_SETTING', store.store)
+  mainWindow.webContents.on('did-finish-load', function () {
+    mainWindow?.webContents?.send('LOAD_SETTING', store.store)
   })
 
   store.onDidAnyChange((newValue, _oldValue) => {
-    win.webContents.send('LOAD_SETTING', newValue)
+    mainWindow?.webContents?.send('LOAD_SETTING', newValue)
   })
 
   // win.webContents.openDevTools()
 }
 
+const showWindow = () => {
+  if (mainWindow && mainWindow.isDestroyed()) {
+    createWindow()
+  } else {
+    if (mainWindow?.isMinimized()) mainWindow?.restore()
+    mainWindow?.focus()
+  }
+}
+
+const createTray = () => {
+  let imagePath = ''
+  if (process.platform === 'win32') {
+    imagePath = nativeTheme.shouldUseDarkColors
+      ? path.resolve(__dirname, './assets/images/tray-icon/tray-icon-white.ico')
+      : path.resolve(__dirname, './assets/images/tray-icon/tray-icon.ico')
+  } else {
+    imagePath = nativeTheme.shouldUseDarkColors
+      ? path.resolve(__dirname, './assets/images/tray-icon/tray-icon-whiteTemplate.png')
+      : path.resolve(__dirname, './assets/images/tray-icon/tray-iconTemplate.png')
+  }
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'コントロールパネルを表示',
+      click: () => showWindow(),
+    },
+    {
+      label: '終了',
+      role: 'quit',
+    },
+  ])
+
+  tray = new Tray(imagePath)
+  tray.setToolTip('ローカルプロキシサーバー')
+  tray.setContextMenu(contextMenu)
+}
+
 // see https://www.electronjs.org/ja/docs/latest/tutorial/offscreen-rendering.
 app.disableHardwareAcceleration()
 
+// Electronの起動を早くするため、app whenReadyよりも前に呼び出す
+Menu.setApplicationMenu(null)
+
 app.whenReady().then(() => {
-  const store = initStore()
-  handleIpcMain(store)
-  createWindow(store)
+  handleIpcMain()
+  createWindow()
+  createTray()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+
+  // app.requestSingleInstanceLock() が実行されたとき、アプリケーションの1つ目のインスタンス内で発火する
+  app.on('second-instance', (_e, argv) => {
+    showWindow()
+  })
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
+  // 全てのウィンドウが閉じられた時にアプリを閉じないようにする
 })
