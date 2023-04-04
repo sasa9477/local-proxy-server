@@ -1,3 +1,4 @@
+'use strict'
 const path = require('path')
 const fs = require('fs')
 const httpProxy = require('http-proxy')
@@ -5,10 +6,34 @@ const httpProxy = require('http-proxy')
 /** @type {httpProxy | null} */
 let server = null
 
+/** @type {ServerStatus} */
+let serverStatus = {
+  isRunning: false,
+  serverUrl: '',
+  enableWs: false,
+  qrcode: '',
+}
+
+const getServerStatus = () => serverStatus
+
+const getHostIpAddress = () => {
+  const { networkInterfaces } = require('os')
+  const nets = networkInterfaces()
+  const results = []
+
+  for (const name of Object.keys(nets)) {
+    const net = nets[name]?.filter((net) => net.family === 'IPv4' && !net.internal)
+    if (net?.length) results.push({ name: name, address: net[0].address })
+  }
+  console.log('IP Addresses', results)
+
+  return results.length ? results[0].address : 'error'
+}
+
 /**
  * launch proxy server
  * @param {StartProxyServerOption} args
- * @returns {Promise<void>}
+ * @returns {Promise<ServerStatus>}
  */
 const startProxyServer = async (args) => {
   const { targetUrl, listenPort, enableHttps, enableWs } = args
@@ -31,24 +56,46 @@ const startProxyServer = async (args) => {
     })
     .on('error', (err, req, res) => {
       console.log('Proxy server error: \n', err)
+      serverStatus.isRunning = false
       res.status(500).json({ message: err.message })
     })
     .listen(listenPort)
 
-  console.log(`Https ${enableHttps}, Ws ${enableWs}`)
-  console.log(`Target url ${targetUrl}. Listening on port ${listenPort}...`)
+  const hostIpAddress = getHostIpAddress()
+  const serverUrl = `${enableHttps ? 'https' : 'http'}://${hostIpAddress}:${listenPort}`
+
+  const QRCode = require('qrcode')
+  const qrcode = await QRCode.toDataURL(serverUrl, {
+    scale: 3,
+  })
+
+  console.log(`Listening on ${serverUrl} target URL: ${targetUrl} ws: ${enableWs}`)
+
+  serverStatus = {
+    isRunning: true,
+    targetUrl: targetUrl,
+    serverUrl: serverUrl,
+    enableWs: enableWs,
+    qrcode: qrcode,
+  }
+
+  return serverStatus
 }
 
-const stopProxyServer = async () => {
-  if (server != null) {
+const stopProxyServer = () =>
+  new Promise((resolve) => {
     server.close(() => {
       server = null
+      serverStatus.isRunning = false
+
       console.log('Stopped proxy server')
+
+      resolve(serverStatus)
     })
-  }
-}
+  })
 
 module.exports = {
+  getServerStatus,
   startProxyServer,
   stopProxyServer,
 }

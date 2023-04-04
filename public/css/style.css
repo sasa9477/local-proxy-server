@@ -161,14 +161,25 @@ button:hover:not(:disabled) {
   width: 100%;
 }
 
-.server-status {
+.server-status-container {
   width: 100%;
   margin-top: 16px;
+  display: grid;
+  place-content: center;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.server-status {
   white-space: pre-wrap;
 }
 
 .server-status[class*='error'] {
   color: #ff0000;
+}
+
+.server-url-qrcode {
+  display: block;
 }
 
 @media (prefers-color-scheme: dark) {

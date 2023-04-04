@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'" />
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'" /> -->
     <title>Local Proxy Server Control Panel</title>
     <link rel="stylesheet" href="./css/style.css" />
   </head>
@@ -41,7 +41,10 @@
           <button type="button" id="stop-button" disabled>サーバーを停止</button>
         </div>
       </form>
-      <p class="server-status" id="server-status">Server Stopped</p>
+      <div class="server-status-container">
+        <p class="server-status" id="server-status">Server Stopped</p>
+        <img class="server-url-qrcode" id="server-url-qrcode" />
+      </div>
     </main>
     <script src="./js/renderer.js"></script>
   </body>

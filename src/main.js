@@ -4,23 +4,7 @@
 const path = require('path')
 const { app, BrowserWindow, ipcMain, Menu, Tray, nativeTheme } = require('electron')
 const Store = require('electron-store')
-const { startProxyServer, stopProxyServer } = require('./proxyServerController')
-
-// const { networkInterfaces } = require('os')
-// const nets = networkInterfaces()
-// const results = []
-
-// for (const name of Object.keys(nets)) {
-//   const net = nets[name]?.filter((net) => net.family === 'IPv4' && !net.internal)
-//   if (net?.length) results.push({ name: name, address: net[0].address })
-// }
-// console.log(results)
-
-// var QRCode = require('qrcode')
-
-// QRCode.toDataURL('http://192.168.0.19:8888', function (err, url) {
-//   console.log(url)
-// })
+const { getServerStatus, startProxyServer, stopProxyServer } = require('./proxyServerController')
 
 /**
  * アプリの多重起動防止
@@ -92,7 +76,7 @@ const handleIpcMain = () => {
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
-    width: 580,
+    width: 600,
     height: 400,
     backgroundColor: '#222222',
     show: false,
@@ -103,20 +87,24 @@ const createWindow = () => {
 
   mainWindow.loadFile('./public/index.html')
 
+  // タスクトレイ常駐型にしたため、コメントアウト
   // see https://www.electronjs.org/docs/latest/api/browser-window/#using-the-ready-to-show-event
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show()
-  })
+  // mainWindow.once('ready-to-show', () => {
+  //   mainWindow?.show()
+  // })
 
   mainWindow.webContents.on('did-finish-load', function () {
-    mainWindow?.webContents?.send('LOAD_SETTING', store.store)
+    if (mainWindow?.webContents) {
+      mainWindow.webContents.send('LOAD_SETTING', store.store)
+      mainWindow.webContents.send('LOAD_SERVER_STATUS', getServerStatus())
+    }
   })
 
   store.onDidAnyChange((newValue, _oldValue) => {
     mainWindow?.webContents?.send('LOAD_SETTING', newValue)
   })
 
-  // win.webContents.openDevTools()
+  if (!app.isPackaged) mainWindow.webContents.openDevTools()
 }
 
 const showWindow = () => {
