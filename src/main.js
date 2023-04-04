@@ -87,12 +87,6 @@ const createWindow = () => {
 
   mainWindow.loadFile('./public/index.html')
 
-  // タスクトレイ常駐型にしたため、コメントアウト
-  // see https://www.electronjs.org/docs/latest/api/browser-window/#using-the-ready-to-show-event
-  // mainWindow.once('ready-to-show', () => {
-  //   mainWindow?.show()
-  // })
-
   mainWindow.webContents.on('did-finish-load', function () {
     if (mainWindow?.webContents) {
       mainWindow.webContents.send('LOAD_SETTING', store.store)
@@ -108,10 +102,15 @@ const createWindow = () => {
 }
 
 const showWindow = () => {
-  if (mainWindow && mainWindow.isDestroyed()) {
+  if (!mainWindow || mainWindow.isDestroyed()) {
     createWindow()
+    // see https://www.electronjs.org/docs/latest/api/browser-window/#using-the-ready-to-show-event
+    mainWindow?.once('ready-to-show', () => {
+      mainWindow?.show()
+    })
   } else {
-    if (mainWindow?.isMinimized()) mainWindow?.restore()
+    if (mainWindow?.isClosable()) mainWindow?.show()
+    else if (mainWindow?.isMinimized()) mainWindow?.restore()
     mainWindow?.focus()
   }
 }

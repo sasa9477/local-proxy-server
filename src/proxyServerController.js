@@ -87,6 +87,7 @@ const stopProxyServer = () =>
     server.close(() => {
       server = null
       serverStatus.isRunning = false
+      serverStatus.qrcode = ''
 
       console.log('Stopped proxy server')
 
