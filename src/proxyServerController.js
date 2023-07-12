@@ -21,13 +21,21 @@ const getHostIpAddress = () => {
   const nets = networkInterfaces()
   const results = []
 
+  console.log(nets)
+
   for (const name of Object.keys(nets)) {
     const net = nets[name]?.filter((net) => net.family === 'IPv4' && !net.internal)
     if (net?.length) results.push({ name: name, address: net[0].address })
   }
   console.log('IP Addresses', results)
 
-  return results.length ? results[0].address : 'error'
+  // TODO: GUIから listで選択できるようにする
+  if (results.length) {
+    const localIp = results.find((item) => item.address.startsWith('192.168.11'))
+    return localIp.address
+  }
+
+  return 'error'
 }
 
 /**
