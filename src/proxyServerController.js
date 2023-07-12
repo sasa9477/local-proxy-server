@@ -39,7 +39,24 @@ const getHostIpAddress = () => {
 }
 
 /**
- * launch proxy server
+ * Stop proxy server
+ * @returns {Promise<ServerStatus>}
+ */
+const stopProxyServer = () =>
+  new Promise((resolve) => {
+    server.close(() => {
+      server = null
+      serverStatus.isRunning = false
+      serverStatus.qrcode = ''
+
+      console.log('Stopped proxy server')
+
+      resolve(serverStatus)
+    })
+  })
+
+/**
+ * Start proxy server
  * @param {StartProxyServerOption} args
  * @returns {Promise<ServerStatus>}
  */
@@ -64,8 +81,8 @@ const startProxyServer = async (args) => {
     })
     .on('error', (err, req, res) => {
       console.log('Proxy server error: \n', err)
-      serverStatus.isRunning = false
       res.status(500).json({ message: err.message })
+      stopProxyServer()
     })
     .listen(listenPort)
 
@@ -89,19 +106,6 @@ const startProxyServer = async (args) => {
 
   return serverStatus
 }
-
-const stopProxyServer = () =>
-  new Promise((resolve) => {
-    server.close(() => {
-      server = null
-      serverStatus.isRunning = false
-      serverStatus.qrcode = ''
-
-      console.log('Stopped proxy server')
-
-      resolve(serverStatus)
-    })
-  })
 
 module.exports = {
   getServerStatus,

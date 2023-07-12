@@ -6,20 +6,10 @@ const { app, BrowserWindow, ipcMain, Menu, Tray, nativeTheme } = require('electr
 const Store = require('electron-store')
 const { getServerStatus, startProxyServer, stopProxyServer } = require('./proxyServerController')
 
-/**
- * アプリの多重起動防止
- */
-if (!app.requestSingleInstanceLock()) {
-  app.quit()
-}
-
 const MAX_TARGET_URL_LENGTH = 10
 
 /** @type {BrowserWindow | null} */
-let mainWindow = null
-
-/** @type {Tray | null} */
-let tray = null
+let win = null
 
 /** @type {Store.Schema<Setting>} */
 const schema = {
@@ -75,7 +65,11 @@ const handleIpcMain = () => {
 }
 
 const createWindow = () => {
-  mainWindow = new BrowserWindow({
+  store.onDidAnyChange((newValue, _oldValue) => {
+    win?.webContents?.send('LOAD_SETTING', newValue)
+  })
+
+  win = new BrowserWindow({
     width: 600,
     height: 400,
     backgroundColor: '#222222',
@@ -85,62 +79,23 @@ const createWindow = () => {
     },
   })
 
-  mainWindow.loadFile('./public/index.html')
+  win.loadFile('./public/index.html')
 
-  mainWindow.webContents.on('did-finish-load', function () {
-    if (mainWindow?.webContents) {
-      mainWindow.webContents.send('LOAD_SETTING', store.store)
-      mainWindow.webContents.send('LOAD_SERVER_STATUS', getServerStatus())
+  win.webContents.on('did-finish-load', function () {
+    if (win?.webContents) {
+      win.webContents.send('LOAD_SETTING', store.store)
+      win.webContents.send('LOAD_SERVER_STATUS', getServerStatus())
     }
   })
 
-  store.onDidAnyChange((newValue, _oldValue) => {
-    mainWindow?.webContents?.send('LOAD_SETTING', newValue)
+  // see https://www.electronjs.org/docs/latest/api/browser-window/#using-the-ready-to-show-event
+  win?.once('ready-to-show', () => {
+    win?.show()
+
+    if (!app.isPackaged) {
+      win?.webContents.openDevTools()
+    }
   })
-
-  if (!app.isPackaged) mainWindow.webContents.openDevTools()
-}
-
-const showWindow = () => {
-  if (!mainWindow || mainWindow.isDestroyed()) {
-    createWindow()
-    // see https://www.electronjs.org/docs/latest/api/browser-window/#using-the-ready-to-show-event
-    mainWindow?.once('ready-to-show', () => {
-      mainWindow?.show()
-    })
-  } else {
-    if (mainWindow?.isClosable()) mainWindow?.show()
-    else if (mainWindow?.isMinimized()) mainWindow?.restore()
-    mainWindow?.focus()
-  }
-}
-
-const createTray = () => {
-  let imagePath = ''
-  if (process.platform === 'win32') {
-    imagePath = nativeTheme.shouldUseDarkColors
-      ? path.resolve(__dirname, './assets/images/tray-icon/tray-icon-white.ico')
-      : path.resolve(__dirname, './assets/images/tray-icon/tray-icon.ico')
-  } else {
-    imagePath = nativeTheme.shouldUseDarkColors
-      ? path.resolve(__dirname, './assets/images/tray-icon/tray-icon-whiteTemplate.png')
-      : path.resolve(__dirname, './assets/images/tray-icon/tray-iconTemplate.png')
-  }
-
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'コントロールパネルを表示',
-      click: () => showWindow(),
-    },
-    {
-      label: '終了',
-      role: 'quit',
-    },
-  ])
-
-  tray = new Tray(imagePath)
-  tray.setToolTip('ローカルプロキシサーバー')
-  tray.setContextMenu(contextMenu)
 }
 
 // see https://www.electronjs.org/ja/docs/latest/tutorial/offscreen-rendering.
@@ -152,18 +107,15 @@ Menu.setApplicationMenu(null)
 app.whenReady().then(() => {
   handleIpcMain()
   createWindow()
-  createTray()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
-
-  // app.requestSingleInstanceLock() が実行されたとき、アプリケーションの1つ目のインスタンス内で発火する
-  app.on('second-instance', (_e, argv) => {
-    showWindow()
-  })
 })
 
 app.on('window-all-closed', () => {
-  // 全てのウィンドウが閉じられた時にアプリを閉じないようにする
+  // 全てのウィンドウが閉じられた時にアプリを閉じる
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
 })
