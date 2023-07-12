@@ -31,7 +31,7 @@ const getHostIpAddress = () => {
 
   // TODO: GUIから listで選択できるようにする
   if (results.length) {
-    const localIp = results.find((item) => item.address.startsWith('192.168.11'))
+    const localIp = results.find((item) => item.address.startsWith('192.168.0'))
     return localIp.address
   }
 
