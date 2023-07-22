@@ -15,7 +15,7 @@ let win = null
 const schema = {
   targetUrls: {
     type: 'array',
-    default: ['https://localhost:3000/', 'http://localhost:3000/'],
+    default: ['http://localhost:3000/'],
   },
   listenPort: {
     type: 'number',
